@@ -1,0 +1,34 @@
+INSTALL			Xse installation instructions
+INSTALL.GNU		Generic autoconf/configure instructions
+Imakefile		Main Imakefile
+MANIFEST		This file
+Makefile		Makefile created by imake from Imakefile
+Makefile.dst		Makefile for the imake-impaired (see INSTALL)
+README			All about xse
+Xse.ad			App-defaults file
+Xse.ad.h		C declarations created from Xse.ad by ad2c
+config.h		Configuration file, created by configure
+config.h.in		Template for config.h
+configure		Configuration script
+configure.in		Autoconf source for configure (not needed)
+ctype.h			Character macros
+parse.c			Event spec parser
+parse.h
+patchlevel.h		Version control
+strcasecmp.c		Case-insensitive string matching, if needed
+strcasecmp.h
+stringdefs.h		Uses config.h to find string includes
+strtol.c		Convert string to long, if needed
+strtol.h
+translate.c		Converts widget classnames to class pointers
+translate.h
+window.c		Various routines for finding/selecting windows
+window.h
+xse.c			Main file
+xse.h
+xse.man			Manpage
+Ad2c/Imakefile		Converts resource files to fallback resources
+Ad2c/Makefile
+Ad2c/README
+Ad2c/ad2c.man
+Ad2c/ad2c.script

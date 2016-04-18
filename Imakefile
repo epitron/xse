@@ -1,0 +1,60 @@
+/**/#
+/**/# Imakefile for xse - an interface to XSendEvent()
+/**/#
+/**/# George Ferguson, ferguson@cs.rochester.edu, 1 Jun 1990.
+/**/#
+/**/# Version 1.6 - 5 Jan 1992
+/**/# Version 2.0 - 31 Jan 1992
+/**/# Version 2.1 -  4 Apr 1993
+/**/#
+
+#include "config.h"
+
+/**/# Uncomment to enable debugging
+/**/#CDEBUGFLAGS = -g
+
+/**/# Where is the app-defaults to C converter?
+/**/# Only needed if you change the app-defaults file Xse.ad and want the
+/**/# changes compiled into the program.
+/**/# If your ad2c came from this xse distribution, then use the following
+/**/# target, otherwise change it to reflect where you put ad2c.
+AD2C = Ad2c/ad2c.script
+
+/**/# If you don't have strcasecmp() and strncasecmp(), adjust the
+/**/# following definitions:
+#ifndef HAVE_STRCASECMP
+STRCASECMPC = strcasecmp.c
+STRCASECMPO = strcasecmp.o
+#endif
+
+/**/# If you don't have strtol(), adjust the following definitions:
+#ifndef HAVE_STRTOL
+STRTOLC = strtol.c
+STRTOLO = strtol.o
+#endif
+
+/**/#########################################################################
+/**/# Nothing to change below here...
+
+LOCAL_LIBRARIES =	XawClientLibs
+
+SRCS = xse.c parse.c window.c translate.c $(STRCASECMPC) $(STRTOLC)
+OBJS = xse.o parse.o window.o translate.o $(STRCASECMPO) $(STRTOLO)
+
+ComplexProgramTarget(xse)
+
+/**/#
+/**/# C code for fallback resources
+/**/#
+Xse.ad.h: Xse.ad
+	$(AD2C) Xse.ad >Xse.ad.h
+
+/**/#
+/**/# What to do when there's nothing to do...
+/**/#
+World:
+	make Makefile
+	make Makefiles
+	make depend
+	make clean
+	make

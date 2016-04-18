@@ -1,0 +1,121 @@
+      Installation Notes for Xse - An Interface to XSendEvent()
+				   
+			   George Ferguson
+		      ferguson@cs.rochester.edu
+				   
+			      4 Apr 1993
+
+-> If you don't have imake/xmkmf, see item (A) below.
+
+1. Xse comes with a GNU autoconf-generated configure script that
+   will hopefully configure the distribution for your system
+   automatically. Complete generic details for running the script
+   are contained in the file INSTALL.GNU. Basically, you should run
+   the script by doing
+	% sh ./configure
+   to create the config.h file. This file is used both by C files and
+   by the Imakefile. You can edit it by hand to change anything that
+   the script got wrong (see (B), below).
+
+   Note: if you use "strange" compiler (that isn't cc or gcc), you
+   should set the environment variable CC appropriately before running
+   configure. Otherwise it will get things that require compilation
+   wrong.
+
+   If running configure yields sed errors, you need a newer version of
+   sed, like maybe GNU sed.
+
+2. Execute
+   	% xmkmf
+   to create the Makefile. Alternatively,
+        % imake -DUseInstalled -I/usr/local/lib/X11/config
+   where the directory given with "-I" is where your Imake.tmpl and
+   Imake.rules live. If you have neither xmkmf nor imake, see (A)
+   below. 
+
+3. Execute
+	% make depend
+   to add the dependencies to the Makefile. This is only necessary if
+   you change any of the files, including the app-defaults file Xse.ad
+   or the manpage. Note that if you change Xse.ad you will need
+   "ad2c" and if you change the manpage you will need to be able to run
+   the shell scripts "help-text[12].sh".
+
+4. Make the package using
+	% make
+   You can try xse without installing it, provided that the
+   fallback resources have been compiled in using ad2c.
+
+   To experiment with different resource settings without recompiling,
+   edit Xse.ad and then do:
+	% ln -s Xse.ad Xse
+	% setenv XAPPLRESDIR $cwd
+   If you have a previous version of xse installed, you will need
+   to do
+	% setenv XFILESEARCHPATH $cwd
+   to prevent the old app-defaults (in the standard place, presumably,
+   since you installed them) from conflicting. Your mileage will vary
+   on this depending on your version of X.
+
+5. Install the package using
+	% make install install.man
+   This will install the xse executable, the app-defaults file,
+   and the manpage.
+
+NOTE: The Imakefile provides the target "World", which does the following:
+	% make -n World
+	make Makefile
+	make Makefiles
+	make depend
+	make clean
+	make
+
+
+A. If you don't have imake/xmkmf, you'll have to work with the file
+   Makefile.dst. You should copy Makefile.dst to Makefile, and then
+   edit it to set the definitions of XINCS, XLIBS, etc., to reflect
+   the peculiarities of your X installation.
+
+   After that, try simply "make" (or "make -f Makefile.dst" if you
+   didn't copy it to Makefile). If there are problems, go through
+   the Makefile using the instructions in item (C) below (for
+   Imakefiles) as a guide. Most things are similar. NOTE: Without,
+   imake, Makefile.dst cannot use C preprocessor directives to
+   configure itself based on the config.h file created by the
+   configure script. You will have to adjust definitions accordingly,
+   using the values in config.h (for your system!) as a guide.
+
+B. Running the configure script will generate a file "config.h" from
+   the template "config.h.in". It may not get everything right for
+   your system. If it doesn't, you'll have to edit "config.h" and
+   make the required changes. Each definition has a short comment
+   indicating the conditions under which it should be defined.
+
+   Be sure to run xmkmf/imake again after changing it.
+
+C. The Imakefile uses definitions in "config.h" to setup a Makefile
+   that is correct for your system. In addition, there are several
+   parameters that you can change by editing the Imakefile directly,
+   although you shouldn't need to do so.
+
+   Note that the Imakefile uses the notation "/**/#" for comments --
+   the "/**/" is for cpp (so the "#" isn't interpreted as a
+   directive), the "#" is for make. You need to delete both parts to
+   "uncomment" a definition, unless it is explicitly indicated that
+   the "#" should be left for cpp (as in "#define").
+
+   o Set BINDIR, LIBDIR, and MANDIR if needed to change where the
+     stuff goes on "make install" and "make install.man".
+   o Xse uses the "ad2c" program to compile-in a set of default
+     resources. You should get a copy of ad2c in this distribution,
+     otherwise you may have to adjust the definition of AD2C. To not
+     compile-in any fallback resources, comment out the #include of
+     Xse.ad.h in file xse.c (see comments there).
+   o Change CDEBUGFLAGS as appropriate to override the default
+     debugging or optimization levels. You might also want to add a
+     definition of CC, or you can type "make CC=gcc", for example.
+
+   Finally, you may want to change defaults in Xse.ad. In
+   particular, you should set the default archie host as appropriate
+   for your location, and possibly the hostWeights also. See the man
+   page for details, and see the Imakefile regarding "ad2c".

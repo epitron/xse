@@ -1,0 +1,13 @@
+dnl Process this file with autoconf to produce a configure script.
+dnl
+AC_INIT(xse.c)
+AC_CONFIG_HEADER(config.h)
+AC_PROG_CC
+AC_PROG_CPP
+AC_GCC_TRADITIONAL
+AC_ISC_POSIX
+AC_IRIX_SUN
+AC_STDC_HEADERS
+AC_HAVE_HEADERS(string.h memory.h)
+AC_HAVE_FUNCS(strcasecmp strtol)
+AC_OUTPUT()

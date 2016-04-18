@@ -1,0 +1,24 @@
+#
+#	Imakefile for ad2c - Convert X resources to C decls
+#
+#	George Ferguson, ferguson@cs.rochester.edu, 19 Mar 1991.
+#
+
+# Where do you want this (if the default isn't okay)?
+#BINDIR = bin
+#MANDIR = man/man1
+# Default suffix is "1", change if you change MANDIR I guess
+##undef ManSuffix
+##define ManSuffix l
+
+# Why is this not the default?
+INSTPGMFLAGS = -m 0755
+
+AllTarget(ad2c)
+depend:
+	@echo 'no need to depend for ad2c'
+ad2c:
+	@echo 'ad2c is up to date'
+
+InstallScript(ad2c,$(BINDIR))
+InstallManPage(ad2c,$(MANDIR))

@@ -1,0 +1,999 @@
+.\"
+.\" xse - an interface to XSendEvent()
+.\"
+.\" George Ferguson, ferguson@cs.rochester.edu, 19 Jun 1990.
+.\"
+.\" Version 1.6 - 5 Jan 1992.
+.\" Version 1.8 - 9 Jan 1992.
+.\" Version 2.0 - 31 Jan 1992.
+.\" Version 2.1 -  4 Apr 1993.
+.\"
+.TH XSE 1 "4 Apr 1993" "U of Rochester"
+.\"
+.\" Macros for event descriptions
+.\"
+.\" .Ev <event> <required fields> - Formats an event schema
+.de Ev
+.LP
+.ad l
+.in +\\w'\\$1 \\$2 | 'u
+.ti -\\w'\\$1 \\$2 | 'u
+\&\fI\\$1\fP \\$2 |
+..
+.\" .Op <field> <default> - Formats an optional field of an event
+.de Op
+.ie !"\\$2"" \&\\$1\ [\\$2]
+.el \&\\$1
+..
+.\" .Ex <event> <fields> - Formats an event shorthand
+.de Ex
+.}E		\" reset indent and line length
+\&\fI\\$1\fP \\$2 ...
+..
+..
+.\" .Fd <field> <optional text> - Formats a field reference
+.de Fd
+.\"\&\fB\\$1\fP\\$2
+\&`\\$1'\\$2
+..
+.\" .Tx - Starts text of event description
+.de Tx
+.ad b
+.RS
+..
+.\" .Te - Ends text of event description
+.de Te
+.RE
+..
+.\"
+.\" Strings defs
+.\"
+.ds Tr \fITrue\fP
+.ds Fa \fIFalse\fP
+.ds Ct \fICurrentTime\fP
+.ds No \fINone\fP
+.ds Wi \fIWindow\fP
+.ds Ro \fIRoot\fP
+.ds Pa \fIParent\fP
+.ds Pw \fIPointerWindow\fP
+.ds If \fIInputFocus\fP
+.ds Cw \fIClickWindow\fP
+.\"
+.SH NAME
+xse \- an interface to XSendEvent()
+.SH SYNOPSIS
+.hy 0
+.na
+.in +4n
+.ti -4n
+.B xse
+[XToolkit options]
+[\-window\ \fIwin\fP]
+[\-file\ \fIfilename\fP]
+\-version]
+\-Debug]
+[event\ specifiers]
+.in -4n
+.ad
+.hy 1
+.SH DESCRIPTION
+.PP
+.I Xse
+provides a way to send arbitrary XEvents to a window, sort of the
+opposite of
+.IR xev (1).
+There are three modes of operation:
+.IP \-
+If event specifiers are given on the command line, then they are
+parsed and sent to the appropriate window;
+.IP \-
+If the
+.B -file
+option is given, then
+.I xse
+reads event specifiers from the given file, and sends them to the
+appropriate window.
+.IP \-
+Otherwise, a tool is created by parsing the
+.B widgets
+resource and creating the specified widgets. These can then use the
+registered action procedures to send events to various windows.
+.PP
+The following sections describe the options in detail, the syntax of
+event specifiers, and the resources used to customize
+.IR xse .
+.SH OPTIONS
+.PP
+The following non-widget resources can be set from the command-line
+or in a resource file. As usual, when given on the command line they can be
+abbreviated to their shortest unique prefix, often the first letter.
+Furthermore
+.I xse
+accepts all the standard X Toolkit options (see
+.IR X (1)).
+.IP "\fB-window\fP \fIwin\fP"
+Specifies which window to send events to.  A window can be specified
+by giving it's name, in which case the first child of the root window
+whose name matches the given string will be used, or by giving it's
+XID, as obtained, e.g. from
+.IR xwininfo (1),
+The keywords \*(Pw, \*(If, or \*(Cw
+can also be used. PointerWindow will send the event to the window
+that the pointer is over, InputFocus will send it to the window with
+the input focus, and ClickWindow will allow you to select the window
+which will receive the event by clicking in it. This option
+corresponds to the
+.B window
+resource. The default is ClickWindow.
+.IP "\fB-file\fP \fIfile\fP"
+If given, then
+.I xse
+reads event specifiers from the given file and sends them to the
+appropriate file. The option corresponds to the
+.B file
+resource. It is an error for this option to be given along with event
+specifiers on the command line.
+.IP "\fB-version\fP"
+If given,
+.I xse
+simply prints its version information to stdout and exits. This option
+corresponds to the
+.B versionOnly
+resource.
+.IP "\fB-Debug\fP"
+Enables lots of ugly verbosity about parsing event specifications.
+Unlikely to be useful to anybody but parser debuggers.
+.PP
+If additional arguments are given on the command line (and
+.B -file
+was not given), they are taken to be
+event specifiers (see below) and no tool is created. Each argument is
+parsed into an event sequence which is sent to the specified window.
+If no extra arguments are present, then a tool is created using the
+.B widgets
+resource. To customize this tool, see below under CUSTOMIZING.
+.SH "SPECIFYING EVENTS"
+.PP
+The syntax for specifying events is modelled after that described in
+Appendix B of the XToolkit Intrinsics (Xt) manual for specifying
+translations. It is extended to allow more complete specification of fields
+that are not needed for recognition but are useful for generation.
+Complete semantics of the different event types and their components
+(fields) is given in Chapter 8 of the Xlib manual.
+.PP
+The following notation is used in these descriptions:
+.IP \-
+Except in keysyms and atoms, case is not significant.
+.IP \-
+Where integers are called for, they are parsed such that a leading
+zero (`0') indicates octal, and a leading `0x' or `0X' indicates
+hexadecimal.
+.IP \-
+Where windows are called for, they can be specified either as an
+integer representing the XID of the window (as obtained, e.g., from
+.IR xwininfo (1)),
+or by giving one of the following keywords:
+.RS
+.IP \(bu
+\*(Pw: Identifies the window that the mouse pointer is in.
+.IP \(bu
+\*(If: Identifies the window with the keyboard focus.
+.IP \(bu
+\*(Wi: Identifes the window to which the events are being sent (see the
+.B -window
+option, above).
+.IP \(bu
+\*(Pa: Identifies the parent window of whichever window was identified
+previously. Note that specifying this when the previous window is not
+really a window will cause an X error and a crash.
+.IP \(bu
+\*(No: Identifes no window, i.e. the constant zero (`0').
+.RE
+.IP
+If the window specification is non-numeric and not one of these
+strings, then the window hierarchy is searched for a window whose name
+matches. If no such window is found,
+.I xse
+reports an error.
+.IP \-
+A Boolean is one of "True" or "False", "Yes" or "No", or "On" or "Off".
+.PP
+When reading from a file (see the
+.B -file
+option, above), each event specifier must on a single line in the file.
+Lines starting with a pound (or hash) symbol (`#') are treated as
+comments and ignored.
+.PP
+An event specifier is an optional list of modifiers, followed by an
+event type description in angle brackets (`<' and `>'), followed by an
+optional repeat count in parentheses (`(' and `)'), followed by field
+specifiers that depend on the type of the event.
+.PP
+The list of modifiers is a whitespace-separated list of the following
+symbols:
+
+.na
+.nf
+		Shift	s		Mod1		Button1
+		Lock		l		Mod2		Button2
+		Ctrl		c		Mod3		Button3
+						Mod4		Button4
+						Mod5		Button5
+.fi
+.ad
+
+The effect of specifying these is to inclusively-OR the approriate
+mask into the
+.B state
+field of events for which this field exists (Key, Button, Motion,
+Enter, and Leave events). They are ignored for other events.
+.PP
+The event type should be one of the following list, which includes all
+possible types of XEvent. They are described along with possible field
+specifiers. Certain event types have shorthands that are also
+described. A vertical bar (`|') separates required fields from optional
+ones. Default values of optional fields are indicated in square
+brackets. All fields must be given in the order listed.
+.SH "Keyboard and Pointer Events"
+.PP
+This class of events all share the same optional fields.
+.Ev KeyPress keycode
+.Op x 0
+.Op y 0
+.Op xroot 0
+.Op yroot 0
+.Op time \*(Ct
+.Op same_screen \*(Tr
+.Op subwindow \*(No
+.Op window \*(Wi
+.Op root \*(Ro
+.Ex KeyDown keycode
+.Ex Key keycode
+.Tx
+These event types use
+.IR XStringToKeysym (3X)
+and
+.IR XKeysymToKeycode (3X)
+to translate the detail (a keysym) into the keycode to send.
+Keysyms may also be specified by numeric value, though symbolic
+interpretation takes precedence over numeric interpretation (this
+affects only keysyms XK_0 through XK_9).  Thus <Key>9 refers to the
+keysym XK_9 whose value is 0x039, not the keysym, if any, whose
+numeric value is 9.  If the latter is desired you can write it as
+<Key>011 (octal notation) or <Key>0x9.
+.Te
+.LP
+.Ex KeyPress++ keycode
+.Ex KeyDown++ keycode
+.Ex Key++ keycode
+.Tx
+These event types are similar to the
+\fIKeyPress\fP, \fIKeyDown\fP, and \fIKey\fP
+events except that after mapping the specified keysym into a keycode,
+the modifiers necessary to reconstruct the specified keysym from that
+keycode are automatically added to the constructed event.
+For example, assuming the XK_dollar keysym is a shifted XK_4 keysym,
+then the `<Key>dollar' event would map into the keycode for the `4' key
+with no modifiers, while the `<Key++>dollar' event would map into the
+same keycode but with the Shift modifier set for you.  This provides
+a degree of independence of the particular keyboard map that happens
+to be installed in the server--to send a `$' character you can simply
+use a `<Key++>dollar' event instead of having to know that the keyboard
+mapping would otherwise require a `Shift<Key>4' event.
+.Te
+.LP
+.Ex KeyRelease keycode
+.Ex KeyUp keycode
+.Tx
+The fields of these event types are as for
+.I KeyPress
+events.
+.Te
+.LP
+.Ex Shift keycode
+.Ex Ctrl keycode
+.Tx
+These event types correspond to a
+.I KeyPress
+event with the appropriate modifier bit set.
+.Te
+.LP
+.Ex Shift++ keycode
+.Ex Ctrl++ keycode
+.Tx
+These event types correspond to a
+.I KeyPress++
+event with the appropriate modifier bit set.
+.Te
+.LP
+.Ex Shift++ keycode
+.Ex Ctrl++ keycode
+.Tx
+These event types correspond to a
+.I KeyPress++
+event with the appropriate modifier bit set.
+.Te
+
+.Ev ButtonPress button
+.Op x 0
+.Op y 0
+.Op xroot 0
+.Op yroot 0
+.Op time \*(Ct
+.Op same_screen \*(Tr
+.Op subwindow \*(No
+.Op window \*(Wi
+.Op root \*(Ro
+.Ex BtnDown button
+.Tx
+The
+.Fd button
+field should specify which button is involved, in the form
+.IR Button X
+(for
+.I X
+a digit from 1 to 5).
+.Te
+.LP
+.Ex ButtonRelease button
+.Ex BtnUp button
+.Tx
+The fields of these event types are as for
+.I ButtonPress
+events.
+.Te
+.LP
+.Ex Btn1Down
+.Ex Btn2Down
+.Ex Btn3Down
+.Ex Btn4Down
+.Ex Btn5Down
+.Tx
+These event types correspond to a
+.I ButtonPress
+event with the appropriate setting of the
+.Fd button
+field.
+.Te
+.LP
+.Ex Btn1Up
+.Ex Btn2Up
+.Ex Btn3Up
+.Ex Btn4Up
+.Ex Btn5Up
+.Tx
+These event types correspond to a
+.I ButtonRelease
+event with the appropriate setting of the
+.Fd button
+field.
+.Te
+
+.Ev MotionNotify is_hint
+.Op x 0
+.Op y 0
+.Op xroot 0
+.Op yroot 0
+.Op time \*(Ct
+.Op same_screen \*(Tr
+.Op subwindow \*(No
+.Op window \*(Wi
+.Op root \*(Ro
+.Ex PtrMoved is_hint
+.Ex Motion is_hint
+.Ex MouseMoved is_hint
+.Tx
+The
+.Fd is_hint
+field should be one of
+.I Normal
+or
+.IR Hint .
+.Te
+.LP
+.Ex Btn1Motion is_hint
+.Ex Btn2Motion is_hint
+.Ex Btn3Motion is_hint
+.Ex Btn4Motion is_hint
+.Ex Btn5Motion is_hint
+.Tx
+Shorthand for a
+.I MotionNotify
+event with the appropriate modifier bit set.
+.Te
+.SH "Window Entry and Exit Events"
+.PP
+This class of events uses the same set of optional fields as the
+Keyboard and Pointer events described in the previous section.
+.Ev EnterNotify "mode detail"
+.Op focus \*(Tr
+.Op x 0
+.Op y 0
+.Op xroot 0
+.Op yroot 0
+.Op time \*(Ct
+.Op same_screen \*(Tr
+.Op subwindow \*(No
+.Op window \*(Wi
+.Op root \*(Ro
+.Ex Enter "mode detail"
+.Ex EnterWindow "mode detail"
+.Ex LeaveNotify "mode detail"
+.Ex Leave "mode detail"
+.Ex LeaveWindow "mode detail"
+.Tx
+The
+.Fd mode
+field should be one of
+.IR Normal ,
+.IR Grab ,
+.IR Ungrab ,
+or
+.IR WhileGrabbed .
+The
+.Fd detail
+field can be one of
+.IR Ancestor ,
+.IR Virtual ,
+.IR Inferior ,
+.IR Nonlinear ,
+.IR NonlinearVirtual ,
+.IR Pointer ,
+.IR PointerRoot ,
+or
+.IR DetailNone .
+.Te
+.SH "Input Focus Events"
+For this class of events, the
+.Fd mode
+and
+.Fd detail
+fields should be as for window entry/exit events described in the
+previous section.
+.Ev FocusIn "mode detail"
+.Op window \*(Wi
+.Ex FocusOut "mode detail"
+.Tx
+.Te
+.SH "Key Map State Notification Events"
+.Ev KeymapNotify
+.Op key_vector
+.Tx
+The key_vector should be a whitespace-separated list of up to thirty-two
+integers representing the keyboard bitmap. It is an error for any of
+these values to be greater than 255.
+.Te
+.SH "Exposure Events"
+.PP
+For this class of events, the
+.Fd major_code
+field (where required) should be one of
+.I CopyArea
+or
+.IR CopyPlane .
+The
+.Fd minor_code
+field (where allowed) should be an integer. The other fields, such as
+.Fd x ,
+.Fd y ,
+.Fd width ,
+.Fd height ,
+and
+.Fd count
+should all be integers.
+.Ev Expose "x y width height"
+.Op count 0
+.Op window \*(Wi
+.Ex Exp "x y width height"
+
+.Ev GraphicsExpose "x y width height major_code"
+.Op minor_code 0
+.Op count 0
+.Op window \*(Wi
+.Ex GrExp "x y width height major_code"
+
+.Ev NoExpose major_code
+.Op minor_code 0
+.Op drawable \*(Wi
+.Ex NoExp major_code
+.SH "Window State Change Events"
+.PP
+In this class of events, the
+.Fd event
+field defaults to whatever the
+.Fd window
+field gets set to (\*(Wi by default).
+.Ev CirculateNotify place
+.Op window \*(Wi
+.Op event same
+.Ex Circ place
+.Tx
+The
+.Fd place
+field should be one of
+.IR PlaceOnTop ,
+.IR OnTop ,
+.IR PlaceOnBottom ,
+or
+.IR OnBottom .
+.Te
+
+.Ev ConfigureNotify "x y width height border_width above"
+.\" special handling for long lines
+.in
+.in +30n
+.Op window \*(Wi
+.Op event same
+.Op override_redirect \*(Fa
+.Ex Configure "x y width height border_width above"
+.Tx
+All required fields should be integers except the
+.Fd above
+field that should be a window.
+.Te
+
+.Ev CreateNotify "x y width height border_width above"
+.\" special handling for long lines
+.in
+.in +30n
+.Op window \*(Wi
+.Op parent same
+.Op override_redirect \*(Fa
+.Ex "Create" "x y width height border_width above"
+.Tx
+All fields are as above, except that the
+.Fd parent
+field behaves exactly like the
+.Fd event
+field does in the other events of this class: it defaults to whatever
+the
+.Fd window
+field gets set to. Use the value
+.I Parent
+to set it to the parent of whatever
+.Fd window
+gets set to.
+.Te
+
+.Ev DestroyNotify
+.Op window \*(Wi
+.Op event same
+.Ex Destroy
+
+.Ev GravityNotify "x y"
+.Op window \*(Wi
+.Op event same
+.Ex Grav "x y"
+.Tx
+Both required fields should be integers.
+.Te
+
+.Ev MapNotify
+.Op window \*(Wi
+.Op event same
+.Op override_redirect \*(Fa
+.Ex Map
+
+.Ev MappingNotify request
+.Op "[first_keycode\ count]"
+.Ex Mapping request
+.Tx
+The request field should be one of
+.IR Modifier ,
+.IR Keyboard ,
+or
+.IR Pointer .
+If it is
+.IR Keyboard ,
+then
+.Fd first_keycode
+and
+.Fd count
+should be integers and default to zero.
+.Te
+
+.Ev ReparentNotify "parent x y"
+.Op window \*(Wi
+.Op event same
+.Op override_redirect \*(Fa
+.Ex Reparent "parent x y"
+.Tx
+The
+.Fd parent
+field should be a window (the
+.I Parent
+keyword is probably not useful in this context since you are
+specifying the new parent).
+.Te
+
+.Ev UnmapNotify
+.Op window \*(Wi
+.Op event same
+.Op from_configure \*(Fa
+.Ex Unmap
+
+.Ev VisibilityNotify state
+.Op window \*(Wi
+.Ex Visibility state
+.Ex Visible state
+.Tx
+The
+.Fd state
+field should be one of
+.IR Unobscured ,
+.IR PartiallyObscured ,
+or
+.IR FullyObscured .
+.Te
+.SH "Structure Control Events"
+For this class of events, the
+.Fd parent
+field (where it is used) defaults to whatever the
+.Fd window
+field gets set to (\*(Wi by default). This may not be the most useful
+thing, but it can't be set to the parent of that window automatically
+since attempting to find the parent of a non-window would cause a
+crash. Like above, use the
+.I Parent
+keyword to explicitly specify the parent of the window referred to by
+the
+.Fd window
+field.
+.Ev CirculateRequest place
+.Op window \*(Wi
+.Ex CircReq place
+.Tx
+The
+.Fd place
+field should be one of
+.IR PlaceOnTop ,
+.IR OnTop ,
+.IR PlaceOnBottom ,
+or
+.IR OnBottom .
+.Te
+
+.Ev ConfigureRequest "x y width height border_width above"
+.\" special handling for long lines
+.in
+.in +30n
+.Op stack_mode \fIAbove\fP
+.Op mask 0
+.Op window \*(Wi
+.Op parent same
+.Ex ConfigureReq "x y width height border_width above"
+.Tx
+All required fields should be integers except the
+.Fd above
+field that should be a window. The
+.Fd stack_mode
+field should be one of
+.IR Above ,
+.IR Below ,
+.IR TopIf ,
+.IR BottomIf ,
+or
+.IR Opposite .
+The
+.Fd mask
+field should be a integer representing a bitmask.
+.Te
+
+.Ev MapRequest
+.Op window \*(Wi
+.Op parent same
+.Ex MapReq
+
+.Ev ResizeRequest "width height"
+.Op window \*(Wi
+.Ex ResReq "width height"
+.Tx
+Both required fields should be integers.
+.Te
+.SH "Colormap State Change Events"
+.PP
+This type of event cannot currently be sent by
+.I xse
+because there is no way to effectively specifiy a colormap in the
+event specification. Attempting to send such an event will cause an
+error.
+.SH "Client Communication Events"
+.PP
+For this class of events, the
+.Fd time
+field should be an integer (defaults to CurrentTime) and all the
+various window fields like
+.Fd target ,
+.Fd owner ,
+and
+.Fd requestor
+default to \*(Wi. Recall that atoms are case-sensitive sequences of
+non-whitespace characters.
+.I Xse
+uses
+.IR XInternAtom (3X)
+with the `only_if_exists' flag set to False, so unrecognized atoms are
+created as necessary.
+.Ev ClientMessage "message_type format data"
+.Op window \*(Wi
+.Ex Message "message_type format data"
+.Tx
+The
+.Fd message_type
+field should be an atom. The
+.Fd format
+field can be
+.IR b ,
+.IR s ,
+.IR l ,
+or
+.IR c .
+In the first three cases, the
+.Fd data
+field should be a whitespace-separated list of twenty bytes, ten
+shorts, or five longs. The integers are checked for range violations.
+If
+.Fd format
+is
+.I c
+then the
+.Fd data
+field should a sequence of twenty characters not separated by
+whitespace.  The following escapes are recognized: \en (newline), \et
+(tab), \er (carriage return), \ef (formfeed), and \eb (backspace). As
+well, the sequence \eXXX where each \fIX\fP is an octal digit is
+recognized (all three digits must be given).
+.Te
+
+.Ev PropertyNotify "atom state"
+.Op window \*(Wi
+.Op time \*(Ct
+.Ex Prop "atom state"
+.Tx
+The 
+.Fd atom
+field should be an atom and the
+.Fd state
+field should be one of
+.I NewValue
+or
+.IR Delete .
+.Te
+
+.Ev SelectionClear selection
+.Op window \*(Wi
+.Op time \*(Ct
+.Ex SelClr selection
+.Tx
+The
+.Fd selection
+field should be an atom.
+.Te
+
+.Ev SelectionRequest "selection target"
+.Op property \*(No
+.Op owner \*(Wi
+.Op requestor [same]
+.Op time \*(Ct
+.Ex SelReq "selection target"
+.Tx
+Both required fields should be atoms. The
+.Fd property
+field should be an atom or the special value
+.IR None .
+.Te
+
+.Ev SelectionNotify "selection target"
+.Op property \*(No
+.Op requestor \*(Wi
+.Op time \*(Ct
+.Ex Select "selection target"
+.Tx
+The fields are as for
+.I SelectionRequest
+events.
+.Te
+.SH EXAMPLES
+.PP
+The following command would cause
+.IR ls (1)
+to be executed in the window labelled "Test Window":
+
+.nf
+.na
+    % xse -win 'Test Window' '<Key>l' '<Key>s' '<Key>Return'
+.ad
+.fi
+
+(but see the BUGS section if this is to work with
+.IR xterm (1)).
+The quotes are protecting the brackets from the shell \(em they would
+not be needed if the event specifiers were given in a file as in:
+
+.nf
+.na
+    % cat events
+    <Key>d
+    <Key>a
+    <Key>t
+    <Key>e
+    <Key>Return
+    % xse -file events
+.ad
+.fi
+
+In this case the user would be prompted to click on a window and the
+.IR date (1)
+command would be sent to that window (see the BUGS section regarding
+using ClickWindow with virtual-root window managers).  As another
+example, you could indicate that Button1 was pressed at coordinates
+(100,200) while Shift was down by doing:
+
+.nf
+.na
+    % xse -win 0x500001 'Shift<Btn1Down> 100 200'
+or
+    % xse -win 0x500001 'Shift<ButtonPress>Button1 100 200'
+.ad
+.fi
+
+The events would go to the window with XID 0x500001 (as reported by,
+say,
+.IR xwininfo (1)).
+You could send a keystroke to a window three times by doing
+
+.nf
+.na
+    % xse '<KeyPress>(3) a'
+.ad
+.fi
+
+for example. Finally, you might simulate "Meta-x" by sending
+
+.nf
+.na
+    % xse '<Key>Meta-L' '<Key>x' '<KeyUp>x' <KeyUp>Meta-L'
+.ad
+.fi
+
+You can from this that Meta is not handled like a modifier key.
+.SH "CUSTOMIZING XSE"
+.PP
+The following section applies only when
+.I xse
+is run in tool mode (ie., when
+.B -file
+was not given and no event specifiers were given on the command line).
+.PP
+.I Xse
+has a default set of (probably unuseful) resources built-in.  To
+customize its behaviour, copy the default application defaults file
+(see below under FILES) and edit it to add your own buttons and
+actions. Then set the environment variable
+.B XAPPLRESDIR
+to point to the directory where your copy lives. Alternatively, you
+can place entries in your .Xresources or .Xdefaults file.
+.PP
+The application class is
+.IR Xse .
+The resource
+.I widgets
+determines what widgets will be created. This should be a list of
+whitespace-separated triples specifying the WidgetClass, name, and
+parent widget name for each widget desired. For example, the default
+configuration is:
+
+.nf
+.na
+	Xse.widgets: \e
+		Form		form		toplevel \en\e
+		Command	button1	form \en\e
+		Command	button2	form \en
+		Command	button3	form \en
+.ad
+.fi
+
+This creates three vertically-stacked buttons (Command widgets) in a
+Form.  Note that the widget
+.I toplevel
+is predefined (class ApplicationShell) and other names must be in
+a form acceptable to XtNameToWidget(3X). In particular, they must
+be fully specified using periods (`.') to separate the components
+below
+.I toplevel
+(although this is not illsutrated in the example, a child of button1
+would specify "form.button1" as its parent, not just "button1").
+.PP
+You can create different versions of
+.I xse
+from the same application defaults file by specifying different
+program names in place of the class name "Xse" in the defaults file,
+and making links to the
+.I xse
+executable with those names. For example,
+"xse-vi.widgets" applies when the
+command "xse-vi" is executed. This command can either be a link to
+.IR xse 
+or you can specify the alternate name with the
+.B -name
+XToolkit option. The default resource file includes a more complicated
+example for you to look at.
+.SH "Translation Actions"
+.PP
+There are only two translation actions:
+.IP "\fBxse-quit()\fP"
+Exit
+.IR xse .
+.IP "\fBxse-send()\fP"
+Sends an event sequence to a window.
+With no arguments,
+the event causing the action to be invoked is passed to the
+default window. If only one argument is given, it
+is taken to be an event specifier and the event(s) are sent to the
+default window.
+If two arguments are given, the first is the window
+and the second the event sequence. Note that if
+.I ClickWindow
+is given as the window specifier, the user will be prompted to click
+again. See also the BUGS section about using name lookup in this
+context.
+.SH ENVIRONMENT
+.PP
+XAPPLRESDIR			application defaults directory
+.SH FILES
+.PP
+$LIBDIR/app-defaults/Xse	default resource file
+.SH DIAGNOSTICS
+.PP
+A variety of messages can be generated if
+.I xse
+cannot parse an event sequence. These should give enough information
+and context for debugging.  In addition, bad window specifications and
+the like are flagged by the ever-popular default X mechanism of
+printing lots of error messages and exiting.
+.SH BUGS
+.PP
+Xse cannot send
+.I ColormapNotify
+events, at least not yet.
+.PP
+.I Xse
+can get confused by virtual-root window managers, so that if
+.I ClickWindow
+is given as the window to send events to (it is the default),
+then events can simply "vanish". The root window finding code is known
+to work with
+.IR tvtwm (1),
+and probably not to work with
+.IR olvwm (1).
+.PP
+It is quite costly to look up windows by name, either to interpret a
+field specifier or to determine what name to send to in the
+.B xse-send()
+actoin. The solution is to use XID's obtained from
+.IR xwininfo (1)
+instead.
+.PP
+Not really a bug, but if you are using
+.I xse
+to send events to an
+.IR xterm (1),
+make sure to enable send events using the main menu or the allowSendEvents
+resource.
+.PP
+Also not really a bug, but note that while sending a
+.I Unmap
+event will cause a window to disappear, sending a
+.I Map
+event will not make it reappear. There are other events and event
+sequences that can cause massive confusion when they arrive
+unexpectedly from
+.IR xse .
+.SH SEE ALSO
+.PP
+XSendEvent(3X),
+xev(1),
+xwininfo(1).
+.SH AUTHOR
+.PP
+George Ferguson (ferguson@cs.rochester.edu).

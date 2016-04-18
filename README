@@ -1,0 +1,60 @@
+	    README for Xse - An interface to XSendEvent()
+
+	      George Ferguson, ferguson@cs.rochester.edu
+
+		       Last Change: 31 Jan 1992
+
+DISCLAIMER:
+
+     This is release 2.1 of xse -- an interface to XSendEvent().
+
+     This software is provided as is with no warranty expressed or
+     implied. I hope you find it useful, but I won't be held
+     responsible for any damage that may occur from reading,
+     compiling, installing, using, or even thinking about it.
+
+     You are free to use any parts of the code that I wrote for other
+     purposes. It would be nice if you could keep my name on some part
+     of whatever the final product is.
+
+OVERVIEW:
+
+     Xse provides an interface to XSendEvent(); sort of an inverse of
+     xev(1). It provides three interfaces depending on how it is
+     invoked. If the -file option is given, the events are read from
+     the specified file and sent to the proper window (either the
+     default or the one given by the "-window" argument). If extra
+     command-line arguments (but not -file) are given, then these are
+     parsed into events and sent to the proper window. If no event
+     sequence is given, then xse creates a tool as specified by the
+     "widgets" resource of its application-defaults file. Presumably
+     this tool will create Command buttons or menus which will use the
+     xse-send() and xse-quit() actions.
+
+     Included in this distribution is the program "ad2c" which
+     converts an application-defaults file to C declarations for
+     inclusion as fallback resources. Also, the code used to specify
+     and create widgets from a resource entry is very modular (see
+     translate.c and initWidgets() in xse.c).
+
+     See the file INSTALL for installation instructions.
+
+HISTORY:
+     Version 1.6 - 5 Jan 1992
+	- Added virtual root window support (GetRootWindow(), xse.c).
+	- Fixed `==/=' bug in parseEventList() (parse.c).
+	- Cleaned up and released "officially".
+
+     Version 1.7 - 7 Jan 1992
+	- New and improved ad2c included in this distribution. Nothing
+	  else changed.
+
+     Version 2.0 - 31 Jan 1992
+	- Parser completely rewritten to allow significantly more fields
+	  to be set, and much better error messages.
+	- Added -file option, improved ClickWindow processing.
+
+     Version 2.1 -  4 Apr 1993
+	- Autodetection of modifiers for Keysyms, thanks to Conrad
+	  Kimball <cek@sdc.boeing.com>.
+	- Autoconf-generated configure script.

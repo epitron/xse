@@ -1,0 +1,79 @@
+#
+# Default Makefile for xse -- An interface to XSendEvent()
+#
+# George Ferguson, ferguson@cs.rochester.edu, 4 Apr 1993.
+#
+# This Makefile is for use if you don't have imake/xmkmf. I don't
+# expect it to be very helpful, since you'll have to know something
+# about your X setup to use it. But here it is anyway. See the file
+# INSTALL for instructions.
+#
+
+# Some useful definitions, adjust as needed:
+CC = cc
+RM = rm -f
+INSTALL = install -c
+INSTPGMFLAGS = -m 755
+INSTAPPFLAGS = -m 644
+INSTMANFLAGS = -m 644
+
+# X-specific definitions:
+XINCS = -I/usr/staff/include
+XLIBS = -L/usr/staff/lib -lXaw -lXmu -lXt -lXext -lX11
+XAPPLOADDIR = /usr/staff/lib/X11/app-defaults
+
+# Where do you want this stuff? Uncomment and adjust these to change the
+# destinations of "make install" and "make install.man".
+BINDIR = /usr/staff/bin
+LIBDIR = /usr/staff/lib
+MANDIR = /usr/staff/man/man1
+MANSUFFIX = 1
+
+# Where is the app-defaults to C converter?
+# Only needed if you change the app-defaults file Xse.ad and want the
+# changes compiled into the program.
+# If your ad2c came from this xse distribution, then use the following
+# target, otherwise change it to reflect where you put ad2c.
+AD2C = Ad2c/ad2c.script
+
+# How excited are you about debugging? This can be -g, -O, or nothing.
+CDEBUGFLAGS = -O
+
+# If you don't have strcasecmp() and strncasecmp(), uncomment the
+# following definitions:
+# -> See HAVE_STRCASECMP in config.h
+#STRCASECMPC = strcasecmp.c
+#STRCASECMPO = strcasecmp.o
+
+# If you don't have strtol(), uncomment the following definitions:
+# -> See HAVE_STRTOL in config.h
+#STRCASECMPC = strtol.c
+#STRCASECMPO = strtol.o
+
+#########################################################################
+# Nothing to change below here...
+
+OBJS = xse.o parse.o window.o translate.o $(STRCASECMPO) $(STRTOLO)
+
+CFLAGS = $(CDEBUGFLAGS) $(XINCS)
+
+xse: $(OBJS)
+	$(RM) $@
+	$(CC) -o $@ $(OBJS) $(XLIBS)
+
+install: xse
+	$(INSTALL) $(INSTPGMFLAGS) xse $(BINDIR)/xse
+	$(INSTALL) $(INSTAPPFLAGS) Xse.ad $(XAPPLOADDIR)/Xse
+
+install.man:
+	$(INSTALL) $(INSTMANFLAGS) xse.man $(MANDIR)/xse.$(MANSUFFIX)
+
+clean:
+	$(RM) xse
+	$(RM) $(OBJS)
+
+#
+# C code for fallback resources
+#
+Xse.ad.h: Xse.ad
+	$(AD2C) Xse.ad >Xse.ad.h
