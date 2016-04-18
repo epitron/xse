@@ -39,7 +39,7 @@ static Boolean parseAtom(), parseClientMessage();
 static Boolean parseCommonKeyPtrOpts(),parseXYWH();
 static Boolean parseTwoOptWindows(),parseTwoOptWindowsAndBool();
 static void error();
-static int dprintf();
+static int dbg_printf();
 
 /*
  * Data defined here
@@ -363,7 +363,7 @@ unsigned int *modsp;
 	if (!parseUsingTable(modifiers,sp,&m,"unknown modifier"))
 	    return(False);
 	*modsp |= m;
-	dprintf("mods now %X\n",*modsp);
+	dbg_printf("mods now %X\n",*modsp);
 	SKIPWHITE(*sp);
     }
     return(True);
@@ -402,8 +402,8 @@ unsigned int *modsp,*detailp;
     *typep = types[i].value;
     *detailp = types[i].detail;
     *modsp |= types[i].mods;
-    dprintf("parsed event type \"%s\": ",typestr);
-    dprintf("type = %d, detail = %d, mods = %X\n",*typep,*detailp,*modsp);
+    dbg_printf("parsed event type \"%s\": ",typestr);
+    dbg_printf("type = %d, detail = %d, mods = %X\n",*typep,*detailp,*modsp);
     *sp = s;
     return(True);
 }
@@ -890,9 +890,9 @@ char *msg;
 	return(False);
     }
     *ret = table[i].value;
-    dprintf("parsed \"%s\" in table %X, value = %d; ",*sp,table,*ret);
+    dbg_printf("parsed \"%s\" in table %X, value = %d; ",*sp,table,*ret);
     *sp += table[i].len;
-    dprintf("*sp now \"%s\"\n",*sp);
+    dbg_printf("*sp now \"%s\"\n",*sp);
     return(True);
 }
 
@@ -905,7 +905,7 @@ parseBoolean(sp,ret)
 char **sp;
 unsigned int *ret;
 {
-    dprintf("parsing Boolean\n");
+    dbg_printf("parsing Boolean\n");
     return(parseUsingTable(booleans,sp,ret,"boolean expected"));
 }
 
@@ -914,7 +914,7 @@ parseButton(sp,ret)
 char **sp;
 unsigned int *ret;
 {
-    dprintf("parsing Button\n");
+    dbg_printf("parsing Button\n");
     return(parseUsingTable(buttonNames,sp,ret,"button name expected"));
 }
 
@@ -923,7 +923,7 @@ parseMotionHint(sp,ret)
 char **sp;
 unsigned int *ret;
 {
-    dprintf("parsing MotionHint\n");
+    dbg_printf("parsing MotionHint\n");
     return(parseUsingTable(motionHints,sp,ret,"motion hint expected"));
 }
 
@@ -932,7 +932,7 @@ parseNotifyMode(sp,ret)
 char **sp;
 unsigned int *ret;
 {
-    dprintf("parsing NotifyMode\n");
+    dbg_printf("parsing NotifyMode\n");
     return(parseUsingTable(notifyModes,sp,ret,"notify mode expected"));
 }
 
@@ -941,7 +941,7 @@ parseNotifyDetail(sp,ret)
 char **sp;
 unsigned int *ret;
 {
-    dprintf("parsing NotifyDetail\n");
+    dbg_printf("parsing NotifyDetail\n");
     return(parseUsingTable(notifyDetails,sp,ret,"notify detail expected"));
 }
 
@@ -950,7 +950,7 @@ parseExposeMajorCode(sp,ret)
 char **sp;
 unsigned int *ret;
 {
-    dprintf("parsing ExposeMajorCode\n");
+    dbg_printf("parsing ExposeMajorCode\n");
     return(parseUsingTable(exposeMajorCodes,sp,ret,
 			   "expose major code expected"));
 }
@@ -960,7 +960,7 @@ parseCirculateDetail(sp,ret)
 char **sp;
 unsigned int *ret;
 {
-    dprintf("parsing CirculateDetail\n");
+    dbg_printf("parsing CirculateDetail\n");
     return(parseUsingTable(circulateDetails,sp,ret,
 			   "circulate detail expected"));
 }
@@ -970,7 +970,7 @@ parseMappingDetail(sp,ret)
 char **sp;
 unsigned int *ret;
 {
-    dprintf("parsing MappingDetail\n");
+    dbg_printf("parsing MappingDetail\n");
     return(parseUsingTable(mappingDetails,sp,ret,"mapping detail expected"));
 }
 
@@ -979,7 +979,7 @@ parseVisibilityDetail(sp,ret)
 char **sp;
 unsigned int *ret;
 {
-    dprintf("parsing VisibilityDetail\n");
+    dbg_printf("parsing VisibilityDetail\n");
     return(parseUsingTable(visibilityDetails,sp,ret,
 			   "visibility detail expected"));
 }
@@ -989,7 +989,7 @@ parseStackMode(sp,ret)
 char **sp;
 unsigned int *ret;
 {
-    dprintf("parsing StackMode\n");
+    dbg_printf("parsing StackMode\n");
     return(parseUsingTable(stackModes,sp,ret,"stack mode expected"));
 }
 
@@ -998,7 +998,7 @@ parsePropertyDetail(sp,ret)
 char **sp;
 unsigned int *ret;
 {
-    dprintf("parsing PropertyDetail\n");
+    dbg_printf("parsing PropertyDetail\n");
     return(parseUsingTable(propertyDetails,sp,ret,"property detail expected"));
 }
 
@@ -1082,7 +1082,7 @@ unsigned int *modsp;
 	error("can't determine modifiers for keysym",*sp);
 	*modsp = 0;
     }
-    dprintf("parsed keycode \"%s\" = %X\n",buf,*kcp);
+    dbg_printf("parsed keycode \"%s\" = %X\n",buf,*kcp);
     *sp = s;
     return(True);
 }
@@ -1105,7 +1105,7 @@ int *ip;
 	error("whitespace or EOS expected after integer",*sp);
 	return(False);
     }
-    dprintf("parsed integer %d = %o = %X\n",*ip,*ip,*ip);
+    dbg_printf("parsed integer %d = %o = %X\n",*ip,*ip,*ip);
     *sp = s;
     return(True);
 }
@@ -1180,7 +1180,7 @@ Window *wp;
 	error("whitespace or EOS expected after window",*sp);
 	return(False);
     }
-    dprintf("parsed window \"%s\" = %X\n",buf,*wp);
+    dbg_printf("parsed window \"%s\" = %X\n",buf,*wp);
     *sp = s;
     return(True);
 }
@@ -1204,7 +1204,7 @@ Atom *ap;
 	return(False);
     }
     *ap = XInternAtom(display,buf,False);	/* only_if_exists == False */
-    dprintf("parsed atom \"%s\" = %X\n",buf,*ap);
+    dbg_printf("parsed atom \"%s\" = %X\n",buf,*ap);
     *sp = s;
     return(True);
 }
@@ -1402,7 +1402,7 @@ XClientMessageEvent *xcevp;
 		    xcevp->data.b[i] = **sp;
 		    *sp += 1;
 		}
-		dprintf("parsed character '%c' = %d = %o = %X\n",
+		dbg_printf("parsed character '%c' = %d = %o = %X\n",
 			xcevp->data.b[i],xcevp->data.b[i],xcevp->data.b[i],
 			xcevp->data.b[i]);
 	    }
@@ -1440,7 +1440,7 @@ char *s1,*s2;
 
 /*VARARGS*/
 static int
-dprintf(fmt,a1,a2,a3,a4)
+dbg_printf(fmt,a1,a2,a3,a4)
 char *fmt,*a1,*a2,*a3,*a4;
 {
     if (debug)
